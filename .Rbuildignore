@@ -1,2 +1,6 @@
-^.*\.Rproj$
-^\.Rproj\.user$
+^setup_and_test\.R$
+^setup\.R$
+^cran-comments\.md$
+^\.github$
+^data-raw$
+^README\.Rmd$
