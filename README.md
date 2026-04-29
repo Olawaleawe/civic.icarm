@@ -109,7 +109,7 @@ Ludwigsburg University of Education (LUE), Germany
 ## Citation
 
 ```bibtex
-@software{awe2025civicicarm,
+@software{awe2026civicicarm,
   author = {Awe, Olushina Olawale},
   title  = {{civic.icarm}: Interpretable, Civic-Accountable and
             Responsible Machine Learning},
