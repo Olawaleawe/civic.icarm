@@ -1,0 +1,288 @@
+---
+title: "Getting Started with civic.icarm and DataCitizen-Pro"
+author: "Olushina Olawale Awe"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with civic.icarm and DataCitizen-Pro}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 7,
+  fig.height = 4.5,
+  dpi = 120
+)
+```
+
+## Introduction
+
+The `civic.icarm` package implements the **ICARM** framework:
+**I**nterpretable, **C**ivic-**A**ccountable, and **R**esponsible **M**achine Learning.
+
+It is the computational backbone of the **DataCitizen-Pro** research programme —
+a DFG-funded project at Ludwigsburg University of Education (LUE) developing
+*data literacy*, *statistical reasoning*, and *democratic judgment* competencies
+in civic and political teacher education.
+
+This vignette walks through the complete workflow:
+
+1. Split data reproducibly  
+2. Train an interpretable model  
+3. Explain the model globally  
+4. Audit fairness across demographic groups  
+5. Generate a civic accountability scorecard  
+
+---
+
+## Installation
+
+```{r install, eval=FALSE}
+# From GitHub (development)
+remotes::install_github("oluwale-awe/civic.icarm")
+
+# With all suggested packages for full functionality
+remotes::install_github("oluwale-awe/civic.icarm", dependencies = TRUE)
+```
+
+```{r load}
+library(civic.icarm)
+library(ggplot2)
+library(dplyr)
+```
+
+---
+
+## 1. The Data: Civic Voting Participation
+
+`civic_voting` is a synthetic dataset of 1,000 individuals, calibrated to
+approximate German civic participation surveys. It includes both substantive
+predictors (age, education, political interest) and protected attributes
+(gender, migration background) for fairness analysis.
+
+```{r data}
+data(civic_voting)
+glimpse(civic_voting)
+```
+
+```{r data-summary}
+civic_voting |>
+  count(voted, gender) |>
+  tidyr::pivot_wider(names_from = voted, values_from = n)
+```
+
+**DataCitizen-Pro teaching point:** Before modelling, examine the raw group
+disparities. Are there differences in voting rates by gender or migration
+background? Should a model *replicate* or *correct* these patterns?
+
+---
+
+## 2. Reproducible Train/Test Split
+
+```{r split}
+splits <- civic_split(
+  civic_voting,
+  prop      = 0.75,
+  seed      = 2025,
+  stratify  = "voted"       # preserve class balance
+)
+
+cat("Training set:", nrow(splits$train), "rows\n")
+cat("Test set    :", nrow(splits$test),  "rows\n")
+
+# Verify stratification
+prop.table(table(splits$train$voted))
+prop.table(table(splits$test$voted))
+```
+
+---
+
+## 3. Train an Interpretable Classifier (CART)
+
+```{r model}
+m_cart <- civic_fit_classification(
+  formula = voted ~ age + education + political_interest +
+                    news_consumption + civic_org_member + income,
+  data    = splits$train,
+  model   = "cart",
+  seed    = 2025
+)
+
+print(m_cart)
+```
+
+The `civic_model` object stores the seed and a SHA-256 hash of the training
+data — sufficient to reproduce the model exactly.
+
+```{r predict}
+# Predictions on test set
+y_hat  <- predict(m_cart, newdata = splits$test, type = "class")
+y_prob <- predict(m_cart, newdata = splits$test, type = "prob")[, "yes"]
+
+# Evaluate
+metrics <- civic_metrics(
+  y_true  = splits$test$voted,
+  y_pred  = y_hat,
+  y_prob  = y_prob,
+  positive = "yes"
+)
+round(metrics, 3)
+```
+
+---
+
+## 4. Global Explanation: Feature Importance
+
+```{r explain}
+explainer <- civic_explain(m_cart, data = splits$train)
+print(explainer)
+```
+
+```{r plot-importance, fig.cap="Feature importance from the CART classifier."}
+civic_plot_importance(explainer) +
+  labs(title = "What drives civic voting participation? (CART)",
+       subtitle = "DataCitizen-Pro — civic.icarm")
+```
+
+**DataCitizen-Pro teaching point:** Political interest and education dominate.
+Ask learners: *Is it appropriate to use education as a feature in a system
+that allocates civic resources?*
+
+---
+
+## 5. Threshold Analysis
+
+Classification threshold choice is a *democratic decision*, not merely a
+technical one. The 0.5 default treats false positives and false negatives as
+equally costly — but is that appropriate for civic applications?
+
+```{r thresholds}
+thr_tbl <- civic_thresholds(
+  y_true    = splits$test$voted,
+  y_prob    = y_prob,
+  positive  = "yes"
+)
+```
+
+```{r plot-thresholds, fig.cap="Performance metrics across classification thresholds."}
+civic_plot_thresholds(thr_tbl,
+  metrics = c("accuracy", "recall", "precision", "f1")
+)
+```
+
+---
+
+## 6. Fairness Audit
+
+```{r fairness}
+fair_gender <- civic_fairness_report(
+  object    = m_cart,
+  data      = splits$test,
+  outcome   = "voted",
+  protected = "gender",
+  positive  = "yes"
+)
+print(fair_gender)
+```
+
+```{r plot-fairness-tpr, fig.cap="Equal opportunity: True positive rate by gender."}
+civic_plot_fairness(
+  fair_gender,
+  metric   = "tpr",
+  title    = "Equal Opportunity by Gender",
+  ref_line = NULL
+)
+```
+
+```{r plot-fairness-dp, fig.cap="Disparate impact: positive prediction rate by gender. Dashed line = 80% rule."}
+civic_plot_fairness(
+  fair_gender,
+  metric   = "dp_ratio",
+  title    = "Disparate Impact Ratio by Gender",
+  ref_line = 0.8
+)
+```
+
+**DataCitizen-Pro teaching point:** The EU AI Act (2024) mandates fairness
+reporting for high-risk AI systems. Learners discuss: *Which metric — equal
+opportunity, demographic parity, or equalized odds — is most appropriate for
+a model advising on civic resource allocation?*
+
+---
+
+## 7. Confusion Matrix
+
+```{r confusion, fig.cap="Confusion matrix on the test set."}
+civic_plot_confusion(
+  y_true = splits$test$voted,
+  y_pred = y_hat
+)
+```
+
+---
+
+## 8. Audit Trail
+
+```{r audit}
+trail <- civic_audit_trail(
+  object   = m_cart,
+  metrics  = metrics,
+  fairness = fair_gender,
+  analyst  = "O. O. Awe",
+  notes    = "Baseline CART model — DataCitizen-Pro pilot vignette"
+)
+cat(trail)
+```
+
+The JSON audit trail is a *machine-readable civic accountability document*.
+In a real deployment, it would be published alongside the model.
+
+---
+
+## 9. Civic Scorecard (DataCitizen-Pro Synthesis)
+
+```{r scorecard}
+civic_scorecard(
+  object    = m_cart,
+  test_data = splits$test,
+  outcome   = "voted",
+  protected = "gender",
+  positive  = "yes",
+  analyst   = "O. O. Awe",
+  project   = "DataCitizen-Pro Pilot 2025"
+)
+```
+
+---
+
+## 10. Comparing Models
+
+```{r compare-logistic}
+m_logit <- civic_fit_classification(
+  voted ~ age + education + political_interest + news_consumption,
+  data  = splits$train,
+  model = "logistic",
+  seed  = 2025
+)
+
+ex_logit <- civic_explain(m_logit)
+civic_plot_importance(ex_logit,
+  title = "Feature importance — Logistic Regression (|coefficient|)"
+)
+```
+
+**DataCitizen-Pro discussion:** CART vs. logistic regression have different
+interpretability affordances. CART produces a *rule set*; logistic regression
+produces a *weighted score*. Which is more appropriate for a civic context?
+
+---
+
+## Session info
+
+```{r session}
+sessionInfo()
+```

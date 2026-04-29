@@ -1,0 +1,14 @@
+Package: civic.icarm
+Title: Interpretable Civic-Accountable and Responsible Machine Learning
+Version: 0.2.0
+Authors@R: c(person("Olushina Olawale", "Awe", email = "olawaleawe@gmail.com", role = c("aut", "cre")), person("Ludwigsburg University of Education", role = "fnd"))
+Description: A general-purpose framework for Interpretable Civic-Accountable and Responsible Machine Learning (ICARM). Works with any clean tabular data and automatically detects whether a task is binary classification, multi-class classification, or regression from the target variable type. Provides a single unified entry point civic_fit() alongside tidy interfaces for global and local model explanations, group-level fairness auditing, probability calibration, multi-model comparison, threshold analysis, and reproducible audit trails. Designed to support the DataCitizen-Pro research agenda at Ludwigsburg University of Education: developing data literacy, statistical reasoning, and democratic judgment formation in civic and political teacher education.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Language: en-GB
+Depends: R (>= 4.1.0)
+Imports: stats, utils, rpart, ggplot2, dplyr, tidyr, tibble, purrr, rlang, jsonlite, digest
+Suggests: DALEX, glmnet, mgcv, pROC, nnet, testthat, covr
+Config/testthat/edition: 3
+LazyData: true
+RoxygenNote: 7.3.3
