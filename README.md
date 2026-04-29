@@ -1,133 +1,108 @@
-# civic.icarm <img src="man/figures/logo.png" align="right" height="139"/>
+# civic.icarm <img src="man/figures/logo.png" align="right" height="120"/>
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/oluwale-awe/civic.icarm/workflows/R-CMD-check/badge.svg)](https://github.com/oluwale-awe/civic.icarm/actions)
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
+[![R-CMD-check](https://github.com/Olawaleawe/civic.icarm/workflows/R-CMD-check/badge.svg)](https://github.com/Olawaleawe/civic.icarm/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CRAN status](https://www.r-pkg.org/badges/version/civic.icarm)](https://CRAN.R-project.org/package=civic.icarm)
 <!-- badges: end -->
 
-**civic.icarm** provides a unified, pedagogically-grounded R framework for
-**I**nterpretable, **C**ivic-**A**ccountable, and **R**esponsible **M**achine Learning.
+civic.icarm provides a unified, pedagogically-grounded R framework for
+**Interpretable, Civic-Accountable, and Responsible Machine Learning (ICARM)**.
 
-It is the computational backbone of the **DataCitizen-Pro** project —
-a DFG-funded research programme at [Ludwigsburg University of Education (LUE)](https://www.ph-ludwigsburg.de)
-developing **data literacy**, **statistical reasoning**, and **democratic judgment**
-in civic and political teacher education.
+It is the computational backbone of the **DataCitizen-Pro** project
+a proposed DFG-funded research programme at
+[Ludwigsburg University of Education (LUE)](https://www.ph-ludwigsburg.de/)
+developing **data literacy**, **statistical reasoning**, and
+**democratic judgment** in civic and statistical education.
 
 > *"Algorithmic decisions that affect civic life must be interpretable,
-> auditable, and fair — not merely accurate."*
-> — DataCitizen-Pro, DFG Sachbeihilfe 2025
+> auditable, and fair - not merely accurate."*
+> DataCitizen-Pro, DFG Sachbeihilfe 2026
 
 ---
 
 ## Installation
 
 ```r
-# Development version from GitHub
-remotes::install_github("oluwale-awe/civic.icarm")
+# From CRAN (once accepted)
+install.packages("civic.icarm")
 
-# With all suggested packages
-remotes::install_github("oluwale-awe/civic.icarm", dependencies = TRUE)
+# Development version from GitHub
+remotes::install_github("Olawaleawe/civic.icarm")
 ```
 
 ---
 
-## Quick Start
+## Quickstart
 
 ```r
 library(civic.icarm)
 
-# 1. Split data reproducibly
-splits <- civic_split(civic_voting, prop = 0.75,
-                      seed = 2025, stratify = "voted")
+# Works with ANY tabular data - task auto-detected
+m <- civic_fit(voted ~ ., data = civic_voting)
 
-# 2. Train an interpretable CART classifier
-m <- civic_fit_classification(
-  voted ~ age + education + political_interest + news_consumption,
-  data = splits$train, model = "cart", seed = 2025
-)
-print(m)
-
-# 3. Explain globally
-ex <- civic_explain(m, data = splits$train)
+# Explain
+ex <- civic_explain(m, data = civic_voting)
 civic_plot_importance(ex)
 
-# 4. Evaluate on test set
-y_hat <- predict(m, splits$test, type = "class")
-civic_metrics(splits$test$voted, y_hat, positive = "yes")
-
-# 5. Audit fairness across groups
-fair <- civic_fairness_report(m, splits$test,
-                              outcome   = "voted",
-                              protected = "gender",
-                              positive  = "yes")
+# Fairness audit
+fair <- civic_fairness(m, civic_voting,
+                       outcome   = "voted",
+                       protected = "gender",
+                       positive  = "yes")
 civic_plot_fairness(fair, metric = "tpr")
 
-# 6. Generate civic accountability scorecard
-civic_scorecard(m, splits$test, outcome = "voted",
-                protected = "gender", positive = "yes",
-                project   = "DataCitizen-Pro Pilot")
-
-# 7. Produce reproducible audit trail (JSON)
-civic_audit_trail(m, metrics = civic_metrics(splits$test$voted, y_hat),
-                  fairness = fair, analyst = "O. O. Awe",
-                  path = "audit_trail.json")
+# Full accountability scorecard
+civic_scorecard(m, civic_voting,
+                outcome   = "voted",
+                protected = "gender",
+                positive  = "yes",
+                project   = "DataCitizen-Pro")
 ```
 
 ---
 
-## Package Architecture
+## Key functions
 
-```
-civic.icarm/
-├── R/
-│   ├── civic_fit_classification.R  # CART, logistic, L1-penalised
-│   ├── civic_fit_regression.R      # CART, linear, GAM
-│   ├── civic_explain.R             # Global + local explanations (DALEX)
-│   ├── civic_fairness_report.R     # Fairness metrics & equity summary
-│   ├── civic_audit_trail.R         # Audit trail + civic scorecard
-│   ├── plots.R                     # All ggplot2 visualisations
-│   ├── utils.R                     # split, metrics, thresholds
-│   └── data.R                      # Dataset documentation
-├── data/                           # civic_voting, civic_education,
-│                                   # civic_german_credit
-├── tests/testthat/                 # 20+ unit tests
-└── vignettes/                      # Full DataCitizen-Pro workflow
-```
+| Function | Description |
+|---|---|
+| `civic_fit()` | Train any model - auto-detects binary, multiclass, regression |
+| `civic_explain()` | Global feature importance |
+| `civic_fairness()` | Group equity metrics across protected attributes |
+| `civic_calibrate()` | Probability calibration diagnostics |
+| `civic_compare()` | Side-by-side multi-model comparison |
+| `civic_audit()` | Reproducible JSON audit trail |
+| `civic_scorecard()` | Full civic accountability report |
 
 ---
 
-## DataCitizen-Pro Connection
+## DataCitizen-Pro connection
 
-The three **DataCitizen-Pro** competency pillars map directly to package modules:
-
-| Pillar | civic.icarm module | Key function |
-|---|---|---|
-| Data Literacy | Modelling + Audit | `civic_fit_*()`, `civic_audit_trail()` |
-| Statistical Reasoning | Metrics + Thresholds | `civic_metrics()`, `civic_thresholds()` |
-| Democratic Judgment | Fairness + Scorecard | `civic_fairness_report()`, `civic_scorecard()` |
+| Competency pillar | civic.icarm module |
+|---|---|
+| Data Literacy | `civic_fit()`, `civic_audit()` |
+| Statistical Reasoning | `civic_metrics()`, `civic_thresholds()`, `civic_calibrate()` |
+| Democratic Judgment | `civic_fairness()`, `civic_scorecard()` |
 
 ---
 
-## Supported Learners
+## Built-in datasets
 
-| Model | Type | Function |
+| Dataset | Rows | Task |
 |---|---|---|
-| CART (decision tree) | Classification & Regression | `civic_fit_classification(model="cart")` |
-| Logistic regression | Classification | `civic_fit_classification(model="logistic")` |
-| L1-penalised logistic | Classification | `civic_fit_classification(model="logistic_l1")` |
-| Linear regression | Regression | `civic_fit_regression(model="linear")` |
-| GAM | Regression | `civic_fit_regression(model="gam")` |
+| `civic_voting` | 1,000 | Binary classification |
+| `civic_education` | 800 | Regression |
+| `civic_german_credit` | 1,000 | Binary classification (fairness benchmark) |
 
 ---
 
-## Example Datasets
+## Author
 
-| Dataset | Rows | Description |
-|---|---|---|
-| `civic_voting` | 1,000 | Synthetic voter participation (with protected attributes) |
-| `civic_education` | 800 | Teacher education civic knowledge outcomes |
-| `civic_german_credit` | 1,000 | German credit scoring fairness benchmark |
+**Prof. Dr. Olushina Olawale Awe**
+Alexander von Humboldt Foundation Visiting Professor
+Statistical and Data Science Literacy
+Ludwigsburg University of Education (LUE), Germany
+[olawaleawe@gmail.com](mailto:olawaleawe@gmail.com)
 
 ---
 
@@ -135,30 +110,22 @@ The three **DataCitizen-Pro** competency pillars map directly to package modules
 
 ```bibtex
 @software{awe2025civicicarm,
-  author  = {Awe, Olushina Olawale},
-  title   = {{civic.icarm}: Interpretable, Civic-Accountable, and Responsible
-             Machine Learning for Education},
-  year    = {2025},
-  url     = {https://github.com/oluwale-awe/civic.icarm},
-  note    = {R package v0.1.0. Developed under the DataCitizen-Pro research
-             programme, DFG Sachbeihilfe, Ludwigsburg University of Education.}
+  author = {Awe, Olushina Olawale},
+  title  = {{civic.icarm}: Interpretable, Civic-Accountable and
+            Responsible Machine Learning},
+  year   = {2025},
+  url    = {https://github.com/Olawaleawe/civic.icarm},
+  note   = {R package v0.2.0. DataCitizen-Pro DFG Sachbeihilfe,
+            Ludwigsburg University of Education.}
 }
 ```
 
 ---
 
-## Author
-
-**Prof. Dr. Olushina Olawale Awe**  
-Alexander von Humboldt Foundation Visiting Professor of Statistical and Data Science Literacy  
-Ludwigsburg University of Education (LUE), Germany  
-[awe@ph-ludwigsburg.de](mailto:awe@ph-ludwigsburg.de)
-
----
-
 ## Acknowledgements
 
-Developed within the **DataCitizen-Pro** project, submitted to the
+Developed within the **DataCitizen-Pro** project submitted to the
 Deutsche Forschungsgemeinschaft (DFG) Sachbeihilfe programme.
-The Alexander von Humboldt Foundation is thanked for supporting the Visiting
-Professorship at LUE that made this work possible.
+The Alexander von Humboldt Foundation is thanked for supporting
+the Visiting Professorship at LUE.
+
