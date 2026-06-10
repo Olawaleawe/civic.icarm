@@ -11,6 +11,10 @@
 
 \item{...}{Further arguments passed to or from other methods.}
 }
+\value{
+Invisibly returns the \code{civic_model} object \code{x}.
+  Called for its side effect of printing a formatted summary to the console.
+}
 \description{
 Print a civic_model
 }

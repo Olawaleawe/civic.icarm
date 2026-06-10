@@ -11,6 +11,10 @@
 
 \item{...}{Further arguments passed to or from other methods.}
 }
+\value{
+Invisibly returns the summary of the underlying fitted model.
+  Called for its side effect of printing a detailed model summary to the console.
+}
 \description{
 Summary of a civic_model
 }

@@ -228,6 +228,8 @@ civic_fit <- function(formula,
 #' Print a civic_model
 #' @param x A civic_model object.
 #' @param ... Further arguments passed to or from other methods.
+#' @return Invisibly returns the \code{civic_model} object \code{x}.
+#'   Called for its side effect of printing a formatted summary to the console.
 #' @export
 print.civic_model <- function(x, ...) {
   cat(.civic_rule("civic_model"), "\n")
@@ -255,6 +257,8 @@ print.civic_model <- function(x, ...) {
 #' Summary of a civic_model
 #' @param object A civic_model object.
 #' @param ... Further arguments passed to or from other methods.
+#' @return Invisibly returns the summary of the underlying fitted model.
+#'   Called for its side effect of printing a detailed model summary to the console.
 #' @export
 summary.civic_model <- function(object, ...) {
   cat(sprintf("\ncivic_model  [task: %s | model: %s]\n\n",

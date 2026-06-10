@@ -9,6 +9,8 @@
 #'   civic_plot_confusion civic_plot_calibration
 #'   civic_plot_thresholds civic_plot_comparison
 #'   civic_plot_roc_groups
+#' @return A \code{ggplot2} object that can be further customised
+#'   with standard \code{ggplot2} syntax.
 NULL
 
 
