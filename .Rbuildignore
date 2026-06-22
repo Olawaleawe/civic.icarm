@@ -6,3 +6,4 @@
 ^README\.Rmd$
 ^.*\.Rproj$
 ^civic\.R$
+^build$
